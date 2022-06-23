@@ -7,7 +7,6 @@ topic_funs <- function(rd) {
 
   gens <- name[type == "fun"]
   self_meth <- (name %in% gens) & (type %in% c("s3", "s4"))
-
   purrr::map_chr(funs[!self_meth], ~ short_name(.$name, .$type, .$signature))
 }
 
@@ -67,6 +66,10 @@ usage_type <- function(x) {
     list(type = "data", name = as.character(x[[2]]))
   } else if (is.call(x)) {
     if (identical(x[[1]], quote(`<-`))) {
+      if (!is.call(x[[2]])) {
+        # Handle special cases, like .Random.seed <- c(rng.kind, n1, n2, ...)
+        return(list(type = "data", name = as.character(x[[2]])))
+      }
       replacement <- TRUE
       x <- x[[2]]
     } else {
@@ -81,6 +84,14 @@ usage_type <- function(x) {
     }
 
     out
+  } else if (is_na(x)) {
+    list(type = "data", name = "NA")
+  } else if (is_null(x)) {
+    list(type = "data", name = "NULL")
+  } else if (isTRUE(is.infinite(x))) {
+    list(type = "data", name = "Inf")
+  } else if (is_logical(x)) {
+    list(type = "data", name = as.character(x))
   } else {
     stop("Unknown type: ", typeof(x), " (in ", as.character(x), ")",  call. = FALSE)
   }

@@ -6,6 +6,7 @@ rd_text <- function(x, fragment = TRUE) {
 }
 
 rd_file <- function(path, pkg_path = NULL) {
+  remove_ifdef(path)
   if (getRversion() >= "3.4.0") {
     macros <- tools::loadPkgRdMacros(pkg_path)
     set_classes(tools::parse_Rd(path, macros = macros, encoding = "UTF-8"))
@@ -15,6 +16,13 @@ rd_file <- function(path, pkg_path = NULL) {
   } else {
     set_classes(tools::parse_Rd(path, encoding = "UTF-8"))
   }
+}
+
+# pkgdown doesn't understand ifdef: remove for now
+remove_ifdef <- function(path) {
+  lines <- read_lines(path)
+  hits <- grepl("^#ifdef", lines) | grepl("^#endif", lines)
+  write_lines(lines[!hits], path)
 }
 
 #' Translate an Rd string to its HTML output
